@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -31,27 +32,50 @@ import {
   LogFormData,
   LogFormSchema,
 } from "../_utils/form.schemas";
+import { createLog } from "../_actions/actions";
+import { TLog } from "../_models/model";
 
-export function AddLogDialog() {
+interface AddLogDialogProps {
+  onLogAdded: (newLog: TLog) => void;
+}
+
+export function AddLogDialog({ onLogAdded }: AddLogDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const form = useForm<LogFormData>({
     resolver: zodResolver(LogFormSchema),
     defaultValues: defaultLogFormValues,
   });
 
-  function onSubmit(data: LogFormData) {
-    toast("You submitted the following values", {
-      description: (
-        <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    });
+  async function onSubmit(data: LogFormData) {
+    setIsSubmitting(true);
 
-    form.reset();
+    try {
+      const newLog = await createLog(data);
+
+      onLogAdded(newLog);
+
+      toast.success("Log created successfully!", {
+        description: `Log "${newLog.log_text}" has been added.`,
+      });
+
+      form.reset();
+      setOpen(false);
+    } catch (error) {
+      toast.error("Failed to create log", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="size-4" /> Add log
@@ -69,7 +93,7 @@ export function AddLogDialog() {
           <Form {...form}>
             <FormField
               control={form.control}
-              name="logText"
+              name="log_text"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Log Text</FormLabel>
@@ -106,9 +130,13 @@ export function AddLogDialog() {
 
           <DialogFooter className="flex justify-end gap-2">
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline" disabled={isSubmitting}>
+                Cancel
+              </Button>
             </DialogClose>
-            <Button type="submit">Submit</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Submit"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

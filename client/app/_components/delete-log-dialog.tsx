@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,24 +14,44 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Trash } from "lucide-react";
+import { deleteLog } from "../_actions/actions";
 
 interface DeleteLogDialogProps {
   logId: number;
+  onLogDeleted: (logId: number) => void;
 }
 
-export function DeleteLogDialog({ logId }: DeleteLogDialogProps) {
-  function onDelete() {
-    toast("Log deletion requested", {
-      description: (
-        <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-          <code className="text-white">ID: {logId}</code>
-        </pre>
-      ),
-    });
+export function DeleteLogDialog({ logId, onLogDeleted }: DeleteLogDialogProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  async function onDelete() {
+    setIsDeleting(true);
+
+    try {
+      await deleteLog(logId);
+
+      onLogDeleted(logId);
+
+      toast.success("Log deleted successfully!", {
+        description: "The log has been permanently removed from the system.",
+      });
+
+      setIsOpen(false);
+    } catch (error) {
+      toast.error("Failed to delete log", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button
           variant="ghost"
@@ -52,13 +73,17 @@ export function DeleteLogDialog({ logId }: DeleteLogDialogProps) {
 
         <DialogFooter className="flex justify-end gap-2">
           <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DialogClose>
-          <DialogClose asChild>
-            <Button variant="destructive" onClick={onDelete}>
-              Delete
+            <Button variant="outline" disabled={isDeleting}>
+              Cancel
             </Button>
           </DialogClose>
+          <Button
+            variant="destructive"
+            onClick={onDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

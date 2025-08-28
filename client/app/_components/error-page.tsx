@@ -1,14 +1,23 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function ErrorPage({ message = "Something went wrong" }) {
-  const router = useRouter();
+interface ErrorPageProps {
+  message?: string;
+  onRetry?: () => void;
+}
 
-  const handleRefresh = () => {
-    router.refresh();
+export default function ErrorPage({
+  message = "Something went wrong",
+  onRetry,
+}: ErrorPageProps) {
+  const handleRetry = () => {
+    if (onRetry) {
+      onRetry();
+    } else {
+      window.location.reload();
+    }
   };
 
   return (
@@ -17,9 +26,9 @@ export default function ErrorPage({ message = "Something went wrong" }) {
 
       <p className="text-red-600 text-lg font-medium text-center">{message}</p>
 
-      <Button onClick={handleRefresh}>
+      <Button onClick={handleRetry}>
         <RefreshCw className="w-4 h-4 text-white" />
-        Refresh
+        Retry
       </Button>
     </div>
   );

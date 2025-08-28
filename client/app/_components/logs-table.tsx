@@ -3,7 +3,6 @@
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -22,63 +21,103 @@ import { TLog } from "../_models/model";
 
 interface LogsTableProps {
   logData: TLog[];
+  onLogUpdated: (updatedLog: TLog) => void;
+  onLogDeleted: (logId: number) => void;
 }
 
-export function LogsTable({ logData }: LogsTableProps) {
+export function LogsTable({
+  logData,
+  onLogUpdated,
+  onLogDeleted,
+}: LogsTableProps) {
   return (
-    <Table>
-      <TableCaption>A list of your recent logs.</TableCaption>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Log Text</TableHead>
-          <TableHead>Owner</TableHead>
-          <TableHead>Created At</TableHead>
-          <TableHead>Updated At</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {logData.length === 0 ? (
+    <div className="w-full">
+      <Table>
+        <TableHeader>
           <TableRow>
-            <TableCell
-              colSpan={5}
-              className="text-center text-muted-foreground"
-            >
-              No logs available.
-            </TableCell>
+            <TableHead className="w-[200px] sm:w-auto">Owner</TableHead>
+            <TableHead className="hidden md:table-cell">Created At</TableHead>
+            <TableHead className="hidden md:table-cell">Updated At</TableHead>
+            <TableHead>Log Text</TableHead>
+            <TableHead className="text-right w-[70px]">Actions</TableHead>
           </TableRow>
-        ) : (
-          logData.map((log, index) => (
-            <TableRow key={index}>
-              <TableCell className="font-medium">{log.log_text}</TableCell>
-              <TableCell>{log.owner}</TableCell>
-              <TableCell>
-                {new Intl.DateTimeFormat("en-GB").format(
-                  new Date(log.created_at)
-                )}
-              </TableCell>
-              <TableCell>
-                {new Intl.DateTimeFormat("en-GB").format(
-                  new Date(log.updated_at)
-                )}
-              </TableCell>
-              <TableCell className="text-right">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-28 p-2 flex flex-col gap-2">
-                    {/* <EditLogDialog logId={log.id} /> */}
-                    <DeleteLogDialog logId={log.id} />
-                  </PopoverContent>
-                </Popover>
+        </TableHeader>
+        <TableBody>
+          {logData.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={5}
+                className="h-32 text-center text-muted-foreground"
+              >
+                No logs available on this page.
               </TableCell>
             </TableRow>
-          ))
-        )}
-      </TableBody>
-    </Table>
+          ) : (
+            logData.map((log) => (
+              <TableRow key={log.id} className="group">
+                <TableCell className="font-medium">
+                  <div className="truncate max-w-[150px] sm:max-w-none">
+                    {log.owner}
+                  </div>
+                </TableCell>
+                <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                  {new Intl.DateTimeFormat("en-GB", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }).format(new Date(log.created_at))}
+                </TableCell>
+                <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                  {new Intl.DateTimeFormat("en-GB", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }).format(new Date(log.updated_at))}
+                </TableCell>
+                <TableCell>
+                  <div className="max-w-[200px] sm:max-w-[300px] lg:max-w-none">
+                    <p className="truncate" title={log.log_text}>
+                      {log.log_text}
+                    </p>
+                    <div className="md:hidden text-xs text-muted-foreground mt-1">
+                      {new Intl.DateTimeFormat("en-GB").format(
+                        new Date(log.created_at)
+                      )}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Open menu</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-32 p-2 flex flex-col gap-1"
+                      align="end"
+                    >
+                      <EditLogDialog
+                        logId={log.id}
+                        onLogUpdated={onLogUpdated}
+                      />
+                      <DeleteLogDialog
+                        logId={log.id}
+                        onLogDeleted={onLogDeleted}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

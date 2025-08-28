@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,56 +28,70 @@ import { Input } from "@/components/ui/input";
 import { Edit } from "lucide-react";
 import {
   defaultLogFormValues,
-  fetchLogById,
   LogFormData,
   LogFormSchema,
 } from "../_utils/form.schemas";
+import { getLogById, updateLog } from "../_actions/actions";
+import { TLog } from "../_models/model";
 
 interface EditLogDialogProps {
   logId: number;
+  onLogUpdated: (updatedLog: TLog) => void;
 }
 
-export function EditLogDialog({ logId }: EditLogDialogProps) {
+export function EditLogDialog({ logId, onLogUpdated }: EditLogDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<LogFormData>({
     resolver: zodResolver(LogFormSchema),
     defaultValues: defaultLogFormValues,
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      loadLogData();
-    }
-  }, [isOpen]);
-
-  async function loadLogData() {
+  const loadLogData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const logData = await fetchLogById(logId);
-      form.setValue("logText", logData.logText);
+      const logData = await getLogById(logId);
+      form.setValue("log_text", logData.log_text);
       form.setValue("owner", logData.owner);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load log data");
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [logId, form]);
 
-  function onSubmit(data: LogFormData) {
-    toast("Log updated successfully", {
-      description: (
-        <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-          <code className="text-white">
-            {JSON.stringify({ id: logId, ...data }, null, 2)}
-          </code>
-        </pre>
-      ),
-    });
+  useEffect(() => {
+    if (isOpen) {
+      loadLogData();
+    }
+  }, [isOpen, loadLogData]);
 
-    setIsOpen(false);
-    form.reset();
+  async function onSubmit(data: LogFormData) {
+    setIsSubmitting(true);
+
+    try {
+      const updatedLogData = await updateLog(logId, data);
+
+      onLogUpdated(updatedLogData);
+
+      toast.success("Log updated successfully!", {
+        description: `Log has been updated.`,
+      });
+
+      setIsOpen(false);
+      form.reset();
+    } catch (error) {
+      toast.error("Failed to update log", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function handleCancel() {
@@ -117,7 +131,7 @@ export function EditLogDialog({ logId }: EditLogDialogProps) {
             <Form {...form}>
               <FormField
                 control={form.control}
-                name="logText"
+                name="log_text"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Log Text</FormLabel>
@@ -154,11 +168,16 @@ export function EditLogDialog({ logId }: EditLogDialogProps) {
           )}
 
           <DialogFooter className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={handleCancel}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isSubmitting || isLoading}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              Save changes
+            <Button type="submit" disabled={isLoading || isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save changes"}
             </Button>
           </DialogFooter>
         </form>
