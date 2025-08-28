@@ -18,17 +18,10 @@ import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
 import { DeleteLogDialog } from "./delete-log-dialog";
 import { EditLogDialog } from "./edit-log-dialog";
-
-export type Log = {
-  id: number;
-  log: string;
-  owner: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
+import { TLog } from "../_models/model";
 
 interface LogsTableProps {
-  logData: Log[];
+  logData: TLog[];
 }
 
 export function LogsTable({ logData }: LogsTableProps) {
@@ -55,15 +48,19 @@ export function LogsTable({ logData }: LogsTableProps) {
             </TableCell>
           </TableRow>
         ) : (
-          logData.map((item, index) => (
+          logData.map((log, index) => (
             <TableRow key={index}>
-              <TableCell className="font-medium">{item.log}</TableCell>
-              <TableCell>{item.owner}</TableCell>
+              <TableCell className="font-medium">{log.log_text}</TableCell>
+              <TableCell>{log.owner}</TableCell>
               <TableCell>
-                {new Intl.DateTimeFormat("en-GB").format(item.createdAt)}
+                {new Intl.DateTimeFormat("en-GB").format(
+                  new Date(log.created_at)
+                )}
               </TableCell>
               <TableCell>
-                {new Intl.DateTimeFormat("en-GB").format(item.updatedAt)}
+                {new Intl.DateTimeFormat("en-GB").format(
+                  new Date(log.updated_at)
+                )}
               </TableCell>
               <TableCell className="text-right">
                 <Popover>
@@ -73,8 +70,8 @@ export function LogsTable({ logData }: LogsTableProps) {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-28 p-2 flex flex-col gap-2">
-                    <EditLogDialog logId={item.id} />
-                    <DeleteLogDialog logId={item.id} />
+                    {/* <EditLogDialog logId={log.id} /> */}
+                    <DeleteLogDialog logId={log.id} />
                   </PopoverContent>
                 </Popover>
               </TableCell>

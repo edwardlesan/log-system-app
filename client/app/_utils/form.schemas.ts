@@ -13,13 +13,3 @@ export const defaultLogFormValues: LogFormData = {
   logText: "",
   owner: "",
 };
-
-// MOCK REQUEST
-export async function fetchLogById(id: number): Promise<LogFormData> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  return {
-    logText: `Sample log entry for ID: ${id}`,
-    owner: `Owner`,
-  };
-}
