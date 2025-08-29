@@ -55,10 +55,16 @@ export default function LogsSection() {
   const handleLogAdded = (newLog: TLog) => {
     setLogsData((prev) => {
       const newData = [...prev, newLog];
-      if (paginatedData.length >= itemsPerPage) {
-        const newTotalPages = Math.ceil(newData.length / itemsPerPage);
-        goToPage(newTotalPages);
+      const newTotalPages = Math.ceil(newData.length / itemsPerPage);
+      
+      if (prev.length < currentPage * itemsPerPage) {
+        return newData;
       }
+      
+      if (newTotalPages !== currentPage) {
+        setTimeout(() => goToPage(newTotalPages), 0);
+      }
+      
       return newData;
     });
   };
